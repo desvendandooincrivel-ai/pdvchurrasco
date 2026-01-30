@@ -27,5 +27,16 @@ jobs:
 
       - name: Build & Publish Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Token automatico do GitHub para criar a release
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Renomeado para GH_TOKEN (padrao do electron-builder)
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run electron:publish
+
+      - name: Listar arquivos gerados (Debug)
+        run: ls release/
+        continue-on-error: true
+
+      - name: Upload Artifacts (Backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: release/*.exe

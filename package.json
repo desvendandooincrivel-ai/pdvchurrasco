@@ -37,15 +37,7 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "desvendandooincrivel-ai",
-        "repo": "pdvchurrasco",
-        "releaseType": "release"
-      }
-    ]
+    }
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
