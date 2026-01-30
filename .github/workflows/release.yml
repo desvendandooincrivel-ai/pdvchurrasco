@@ -28,4 +28,4 @@ jobs:
       - name: Build & Publish Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Token automatico do GitHub para criar a release
-        run: npm run electron:build -- --publish always
+        run: npm run electron:publish

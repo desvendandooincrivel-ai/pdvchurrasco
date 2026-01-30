@@ -4,6 +4,10 @@
   "version": "0.0.2",
   "type": "module",
   "main": "electron/main.cjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/desvendandooincrivel-ai/pdvchurrasco.git"
+  },
   "scripts": {
     "dev": "vite",
     "start": "vite",
@@ -11,6 +15,7 @@
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && electron .\"",
     "electron:build": "npm run build && electron-builder",
+    "electron:publish": "npm run build && electron-builder --publish always",
     "release": "npm version patch && git push && git push --tags"
   },
   "build": {
@@ -27,10 +32,19 @@
     "win": {
       "target": "nsis"
     },
-    "publish": {
-      "provider": "github",
-      "private": true
-    }
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "desvendandooincrivel-ai",
+        "repo": "pdvchurrasco"
+      }
+    ]
   },
   "dependencies": {
     "recharts": "^3.7.0",
