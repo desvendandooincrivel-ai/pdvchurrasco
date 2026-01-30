@@ -1,0 +1,31 @@
+name: Build & Release Electron App
+
+on:
+  push:
+    tags:
+      - "v*" # Aciona quando uma tag começando com 'v' é enviada (ex: v1.0.0, v0.1.0)
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write # Permissao necessaria para criar Releases no GitHub
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Instalar Dependências
+        run: npm ci
+
+      - name: Build & Publish Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Token automatico do GitHub para criar a release
+        run: npm run electron:build -- --publish always

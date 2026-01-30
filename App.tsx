@@ -8,6 +8,7 @@ import Reports from './pages/Reports';
 import Users from './pages/Users';
 import AuditLogs from './pages/AuditLogs';
 import AdminAuthModal from './components/AdminAuthModal';
+import UpdateNotification from './components/UpdateNotification';
 import { AppState, User, UserRole } from './types';
 import { loadState, openRegister, closeRegister } from './services/storage';
 
@@ -68,24 +69,24 @@ const App: React.FC = () => {
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-widest">Usuário</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl py-3 px-4 text-white focus:border-orange-600 outline-none transition-all font-bold"
                 value={loginData.name}
-                onChange={e => setLoginData({...loginData, name: e.target.value})}
+                onChange={e => setLoginData({ ...loginData, name: e.target.value })}
               />
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-widest">Senha</label>
-              <input 
-                type="password" 
+              <input
+                type="password"
                 className="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl py-3 px-4 text-white focus:border-orange-600 outline-none transition-all font-bold"
                 value={loginData.password}
-                onChange={e => setLoginData({...loginData, password: e.target.value})}
+                onChange={e => setLoginData({ ...loginData, password: e.target.value })}
               />
             </div>
             {loginError && <p className="text-red-400 text-xs font-bold text-center animate-bounce">{loginError}</p>}
-            <button 
+            <button
               type="submit"
               className="w-full bg-orange-600 text-white py-4 rounded-2xl font-black hover:bg-orange-700 transition-all shadow-lg shadow-orange-950"
             >
@@ -119,13 +120,13 @@ const App: React.FC = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-gray-900">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        currentUser={currentUser} 
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        currentUser={currentUser}
         onLogout={handleLogout}
       />
-      
+
       <main className="flex-1 overflow-y-auto max-h-screen flex flex-col">
         <header className="bg-white border-b px-8 py-4 sticky top-0 z-10 flex justify-between items-center shrink-0">
           <div className="font-medium text-gray-500">
@@ -138,7 +139,7 @@ const App: React.FC = () => {
                   <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">Caixa Aberto</span>
                   <span className="text-xs text-gray-400 font-bold">Desde {new Date(activeRegister.openingTime).toLocaleTimeString('pt-BR')}</span>
                 </div>
-                <button 
+                <button
                   onClick={() => setShowCloseModal(true)}
                   className="bg-red-50 text-red-600 border border-red-200 px-3 py-1 rounded-lg text-sm font-black hover:bg-red-100 transition-colors"
                 >
@@ -146,7 +147,7 @@ const App: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={() => setShowOpenModal(true)}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-black hover:bg-green-700 transition-all shadow-lg shadow-green-100"
               >
@@ -176,7 +177,7 @@ const App: React.FC = () => {
             <div className="p-8 space-y-6">
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest text-center">Fundo de Caixa (R$)</label>
-                <input 
+                <input
                   type="number"
                   autoFocus
                   className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl py-4 px-4 text-3xl font-black text-center focus:border-green-500 outline-none"
@@ -184,7 +185,7 @@ const App: React.FC = () => {
                   onChange={(e) => setInitialBalance(e.target.value)}
                 />
               </div>
-              <button 
+              <button
                 onClick={() => setPendingRegisterAction('open')}
                 className="w-full bg-green-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-green-100"
               >
@@ -205,16 +206,16 @@ const App: React.FC = () => {
             </div>
             <div className="p-8 space-y-6">
               <div className="grid grid-cols-2 gap-4 text-center">
-                 <div className="bg-gray-50 p-6 rounded-3xl border">
-                    <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Entrada</div>
-                    <div className="text-2xl font-black">R$ {activeRegister.initialBalance.toFixed(2)}</div>
-                 </div>
-                 <div className="bg-green-50 p-6 rounded-3xl border border-green-100">
-                    <div className="text-[10px] text-green-600 font-black uppercase tracking-widest mb-1">Vendas do Turno</div>
-                    <div className="text-2xl font-black text-green-700">R$ {state.sales.filter(s => s.cashRegisterId === activeRegister.id).reduce((acc, s) => acc + s.total, 0).toFixed(2)}</div>
-                 </div>
+                <div className="bg-gray-50 p-6 rounded-3xl border">
+                  <div className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Entrada</div>
+                  <div className="text-2xl font-black">R$ {activeRegister.initialBalance.toFixed(2)}</div>
+                </div>
+                <div className="bg-green-50 p-6 rounded-3xl border border-green-100">
+                  <div className="text-[10px] text-green-600 font-black uppercase tracking-widest mb-1">Vendas do Turno</div>
+                  <div className="text-2xl font-black text-green-700">R$ {state.sales.filter(s => s.cashRegisterId === activeRegister.id).reduce((acc, s) => acc + s.total, 0).toFixed(2)}</div>
+                </div>
               </div>
-              <button 
+              <button
                 onClick={() => setPendingRegisterAction('close')}
                 className="w-full bg-red-600 text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-red-100"
               >
@@ -227,7 +228,7 @@ const App: React.FC = () => {
       )}
 
       {pendingRegisterAction && (
-        <AdminAuthModal 
+        <AdminAuthModal
           onConfirm={pendingRegisterAction === 'open' ? handleOpenRegisterExecute : handleCloseRegisterExecute}
           onCancel={() => setPendingRegisterAction(null)}
           users={state.users}
@@ -235,6 +236,7 @@ const App: React.FC = () => {
           description="Operações de caixa requerem autorização expressa do gerente."
         />
       )}
+      <UpdateNotification />
     </div>
   );
 };
