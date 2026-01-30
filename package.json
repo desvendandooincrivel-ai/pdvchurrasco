@@ -42,7 +42,8 @@
       {
         "provider": "github",
         "owner": "desvendandooincrivel-ai",
-        "repo": "pdvchurrasco"
+        "repo": "pdvchurrasco",
+        "releaseType": "release"
       }
     ]
   },
