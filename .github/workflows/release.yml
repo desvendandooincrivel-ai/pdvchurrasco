@@ -27,13 +27,17 @@ jobs:
 
       - name: Build & Publish Release
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Renomeado para GH_TOKEN (padrao do electron-builder)
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run electron:publish
+        continue-on-error: true # Se falhar o upload do builder, tentamos manual abaixo
 
-      - name: Listar arquivos gerados (Debug)
-        run: ls release/
-        continue-on-error: true
+      - name: Forçar Upload via GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} --generate-notes --title "Release ${{ github.ref_name }}" --verify-tag || echo "Release ja existe, atualizando..."
+          gh release upload ${{ github.ref_name }} release/*.exe release/latest.yml release/*.blockmap --clobber
 
       - name: Upload Artifacts (Backup)
         uses: actions/upload-artifact@v4
