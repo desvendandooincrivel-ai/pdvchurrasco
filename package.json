@@ -1,7 +1,7 @@
 {
   "name": "churrasco-control-pdv-estoque",
-  "private": true,
-  "version": "0.0.7",
+  "private": false,
+  "version": "0.0.9",
   "type": "module",
   "main": "electron/main.cjs",
   "repository": {
@@ -48,6 +48,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "dexie": "^4.2.1",
+    "electron-log": "^5.4.3",
     "electron-updater": "^6.3.9",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

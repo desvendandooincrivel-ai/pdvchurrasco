@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -40,19 +40,60 @@ if (!gotTheLock) {
         });
     }
 
-    app.whenReady().then(() => {
+    app.whenReady().then(async () => {
         createWindow();
+
+        console.log('App is ready');
+        console.log('Is Dev?', isDev);
+        console.log('App Version:', app.getVersion());
+
+        // DEBUG VISUAL: Mostrar alerta ao iniciar
+        if (!isDev) {
+            await dialog.showMessageBox({
+                type: 'info',
+                title: 'Debug Iniciado',
+                message: `Versão: ${app.getVersion()}\nModo Dev: ${isDev}\nIniciando busca em 3s...`
+            });
+        }
 
         // Configure AutoUpdater
         autoUpdater.autoDownload = false;
         autoUpdater.allowPrerelease = false;
 
+        // Log setup
+        autoUpdater.logger = require("electron-log");
+        autoUpdater.logger.transports.file.level = "info";
+
+        console.log('AutoUpdater configured. Checking for updates in 3s...');
+
         // Check for updates
         if (!isDev) {
             // Check for updates after app launch
             setTimeout(() => {
-                autoUpdater.checkForUpdates().catch(err => console.log('Update check error:', err));
+                console.log('Checking for updates now...');
+                autoUpdater.checkForUpdates()
+                    .then((res) => {
+                        console.log('Update check finished:', res);
+                        dialog.showMessageBox({
+                            type: 'info',
+                            title: 'Resultado Update',
+                            message: `Check finished. Has info? ${!!res?.updateInfo}`
+                        });
+                    })
+                    .catch(err => {
+                        console.error('Update check error CATCH:', err);
+                        dialog.showMessageBox({
+                            type: 'error',
+                            title: 'Erro Check',
+                            message: err.toString()
+                        });
+                        if (mainWindow) {
+                            mainWindow.webContents.send('update_error', 'CHECK ERROR: ' + err.toString());
+                        }
+                    });
             }, 3000);
+        } else {
+            console.log('Skipping update check because isDev is true.');
         }
     });
 
@@ -89,5 +130,8 @@ if (!gotTheLock) {
 
     autoUpdater.on('error', (err) => {
         console.error('AutoUpdater error:', err);
+        if (mainWindow) {
+            mainWindow.webContents.send('update_error', err.toString());
+        }
     });
 }
