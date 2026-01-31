@@ -154,6 +154,7 @@ const App: React.FC = () => {
                 Abrir Novo Caixa
               </button>
             )}
+            <UpdateNotification />
           </div>
         </header>
 
@@ -236,7 +237,7 @@ const App: React.FC = () => {
           description="Operações de caixa requerem autorização expressa do gerente."
         />
       )}
-      <UpdateNotification />
+
     </div>
   );
 };
