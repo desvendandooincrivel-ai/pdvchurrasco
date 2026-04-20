@@ -13,6 +13,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, currentUser,
   const menuItems = [
     { id: 'pos', label: 'Caixa / PDV', icon: '🛒', roles: [UserRole.ADMIN, UserRole.CAIXA] },
     { id: 'inventory', label: 'Estoque', icon: '📦', roles: [UserRole.ADMIN, UserRole.CAIXA] },
+    { id: 'stock_entry', label: 'Entrada de Mercadoria', icon: '🚚', roles: [UserRole.ADMIN] },
     { id: 'products', label: 'Produtos', icon: '🍢', roles: [UserRole.ADMIN, UserRole.CAIXA] },
     { id: 'reports', label: 'Relatórios', icon: '📊', roles: [UserRole.ADMIN, UserRole.CAIXA] },
     { id: 'users', label: 'Usuários', icon: '👥', roles: [UserRole.ADMIN] },

@@ -1,7 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
-import { AppState, Product, SaleItem, PaymentMethod, Sale, User } from '../types';
-import { processSale, calculateTotalRequirement } from '../services/storage';
+import { AppState, Product, SaleItem, PaymentMethod, Sale, User, Category, ProductType } from '../types';
+import { processSale, calculateTotalRequirement, upsertProduct } from '../services/storage';
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner';
+import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
+import { globalProductsAPI } from '../services/globalProductsAPI';
 
 interface POSProps {
   state: AppState;
@@ -17,6 +20,76 @@ const POS: React.FC<POSProps> = ({ state, onUpdateState, currentUser }) => {
   // Estados para o fluxo de pagamento
   const [paymentStep, setPaymentStep] = useState<'main' | 'cash' | 'card'>('main');
   const [receivedAmount, setReceivedAmount] = useState<string>('');
+
+  // Estados do Scanner de Código de Barras
+  const [modalOpen, setModalOpen] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState('');
+  const [globalFoundName, setGlobalFoundName] = useState('');
+
+  const [manualInput, setManualInput] = useState('');
+
+  const handleScan = async (barcode: string) => {
+    if (modalOpen) return; // Se o modal já está aberto, ignora
+    if (!activeRegister) {
+      alert("Abra o caixa antes de bipar produtos.");
+      return;
+    }
+
+    // 1. Busca localmente (Produtos do Cliente)
+    const localProduct = state.products.find(p => p.barcode === barcode);
+    if (localProduct) {
+      addToCart(localProduct);
+      return;
+    }
+
+    // 2. Não encontrou, busca na Base Global
+    const globalProduct = await globalProductsAPI.getByBarcode(barcode);
+    setScannedBarcode(barcode);
+    if (globalProduct) {
+      setGlobalFoundName(globalProduct.nome_padrao);
+    } else {
+      setGlobalFoundName('');
+    }
+    setModalOpen(true);
+  };
+
+  useBarcodeScanner(handleScan);
+
+  const handleManualSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualInput.trim()) {
+      handleScan(manualInput.trim());
+      setManualInput('');
+    }
+  };
+
+  const handleSaveScannedProduct = async (name: string, price: number, cost?: number) => {
+    const newProduct: Product = {
+      id: `prod_${Date.now()}`,
+      name,
+      price,
+      cost,
+      barcode: scannedBarcode,
+      category: Category.EXTRAS,
+      type: ProductType.INDIVIDUAL,
+      recipe: [],
+      active: true
+    };
+
+    try {
+      await upsertProduct(currentUser, currentUser, newProduct);
+      onUpdateState(); // Refresh the app state
+      addToCart(newProduct);
+      
+      // Contribui para a base global se for um produto novo
+      if (!globalFoundName) {
+        globalProductsAPI.saveNew(scannedBarcode, name).catch(console.error);
+      }
+      setModalOpen(false);
+    } catch (err) {
+      alert("Erro ao salvar produto escaneado.");
+    }
+  };
 
   const activeRegister = state.cashRegisters.find(r => r.status === 'open');
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -124,20 +197,31 @@ const POS: React.FC<POSProps> = ({ state, onUpdateState, currentUser }) => {
     <div className="flex flex-1 gap-6 p-6 overflow-hidden">
       {/* Products Grid */}
       <div className="flex-[3] flex flex-col gap-4">
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-black transition-all ${
-                selectedCategory === cat 
-                  ? 'bg-orange-600 text-white shadow-lg shadow-orange-100' 
-                  : 'bg-white border text-gray-500 hover:bg-gray-50'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+        <div className="flex gap-2 pb-2 items-center justify-between">
+          <div className="flex gap-2 overflow-x-auto flex-1">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-black transition-all ${
+                  selectedCategory === cat 
+                    ? 'bg-orange-600 text-white shadow-lg shadow-orange-100' 
+                    : 'bg-white border text-gray-500 hover:bg-gray-50'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <form onSubmit={handleManualSubmit} className="relative w-[250px] shrink-0">
+            <input 
+              type="text" 
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              placeholder="🔍 Código ou Nome..."
+              className="bg-white border-2 border-gray-100 rounded-full py-2 px-4 text-sm font-bold w-full outline-none focus:border-orange-500 transition-all text-gray-700 shadow-sm"
+            />
+          </form>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto">
@@ -291,6 +375,13 @@ const POS: React.FC<POSProps> = ({ state, onUpdateState, currentUser }) => {
           )}
         </div>
       </div>
+      <BarcodeScannerModal 
+        isOpen={modalOpen}
+        barcode={scannedBarcode}
+        initialName={globalFoundName}
+        onSave={handleSaveScannedProduct}
+        onCancel={() => setModalOpen(false)}
+      />
     </div>
   );
 };

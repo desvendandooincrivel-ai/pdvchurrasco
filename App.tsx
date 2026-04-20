@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import POS from './pages/POS';
 import Inventory from './pages/Inventory';
+import StockEntry from './pages/StockEntry';
 import Products from './pages/Products';
 import Reports from './pages/Reports';
 import Users from './pages/Users';
@@ -161,6 +162,7 @@ const App: React.FC = () => {
         <div className="flex-1 relative overflow-hidden flex flex-col">
           {activeTab === 'pos' && <POS state={state} onUpdateState={refreshData} currentUser={currentUser} />}
           {activeTab === 'inventory' && <Inventory state={state} onUpdateState={refreshData} currentUser={currentUser} />}
+          {activeTab === 'stock_entry' && <StockEntry state={state} onUpdateState={refreshData} currentUser={currentUser} />}
           {activeTab === 'products' && <Products state={state} onUpdateState={refreshData} currentUser={currentUser} />}
           {activeTab === 'reports' && <Reports state={state} currentUser={currentUser} />}
           {activeTab === 'users' && currentUser.role === UserRole.ADMIN && <Users state={state} onUpdateState={refreshData} currentUser={currentUser} />}

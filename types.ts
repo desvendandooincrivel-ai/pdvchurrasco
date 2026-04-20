@@ -28,7 +28,8 @@ export enum MovementType {
   ENTRADA = 'ENTRADA',
   SAIDA = 'SAIDA',
   AJUSTE = 'AJUSTE',
-  VENDA = 'VENDA'
+  VENDA = 'VENDA',
+  NFE = 'NFE'
 }
 
 export interface User {
@@ -70,6 +71,8 @@ export interface InventoryMovement {
   userName: string;
   observation?: string;
   paymentMethod?: PaymentMethod;
+  unitCost?: number;
+  originId?: string;
 }
 
 export interface RecipeItem {
@@ -82,6 +85,8 @@ export interface Product {
   name: string;
   category: Category;
   price: number;
+  cost?: number;
+  barcode?: string;
   type: ProductType;
   recipe: RecipeItem[];
   imageUrl?: string;
@@ -117,6 +122,15 @@ export interface Sale {
   change?: number;
 }
 
+export interface NFe {
+  id: string;
+  provider?: string;
+  emissionDate: number;
+  totalValue: number;
+  xmlStored?: string;
+  timestamp: number;
+}
+
 export interface AppState {
   inventory: InventoryItem[];
   products: Product[];
@@ -125,4 +139,5 @@ export interface AppState {
   users: User[];
   auditLogs: AuditLog[];
   movements: InventoryMovement[];
+  nfes: NFe[];
 }

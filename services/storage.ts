@@ -26,7 +26,8 @@ export const loadState = async (): Promise<AppState> => {
     sales: await db.sales.orderBy('timestamp').reverse().toArray(),
     cashRegisters: await db.cashRegisters.orderBy('openingTime').reverse().toArray(),
     auditLogs: await db.auditLogs.orderBy('timestamp').reverse().toArray(),
-    movements: await db.movements.orderBy('timestamp').reverse().toArray()
+    movements: await db.movements.orderBy('timestamp').reverse().toArray(),
+    nfes: await db.nfes?.orderBy('timestamp').reverse().toArray() || []
   };
 };
 
@@ -210,3 +211,110 @@ export const processSale = async (user: User, sale: Sale): Promise<void> => {
   }
   await db.sales.add(sale);
 };
+
+export const processStockEntry = async (
+  user: User, 
+  items: { barcode?: string; name: string; quantity: number; unitCost?: number }[],
+  type: MovementType.ENTRADA | MovementType.NFE,
+  originId?: string
+): Promise<void> => {
+  
+  for (const item of items) {
+    let product: Product | undefined;
+    
+    // 1. Verificar se código de barras já existe
+    if (item.barcode) {
+      product = await db.products.where('barcode').equals(item.barcode).first();
+    }
+    
+    // Se não encontrou por barcode, mas tem nome igual (fallback segurança)
+    if (!product) {
+      product = await db.products.where('name').equals(item.name).first();
+    }
+
+    let invId = '';
+
+    if (product) {
+      // Produto já existe, descobre o item de estoque principal dele
+      // Se for COMPOSTO/COMBO, não deveria ser entrada direta sem explodir a receita, 
+      // mas para simplificar, se for INDIVIDUAL, achamos o invId.
+      if (product.type === ProductType.INDIVIDUAL && product.recipe.length > 0) {
+        invId = product.recipe[0].inventoryItemId;
+      } else {
+        // Se não tem recipe clara, cria um ou vincula a algo (fallback)
+        invId = `inv_${product.id}`;
+        const existingInv = await db.inventory.get(invId);
+        if (!existingInv) {
+          await db.inventory.add({ id: invId, name: product.name, quantity: 0, minQuantity: 5, unit: 'un' });
+        }
+      }
+      
+      // Atualiza custo se fornecido
+      if (item.unitCost) {
+        await db.products.update(product.id, { cost: item.unitCost });
+      }
+
+    } else {
+      // PRODUTO NÃO EXISTE: Cria novo produto e item de estoque
+      const newProdId = `prod_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      invId = `inv_${newProdId}`;
+      
+      await db.inventory.add({ id: invId, name: item.name, quantity: 0, minQuantity: 5, unit: 'un' });
+      
+      const upperName = item.name.toUpperCase();
+      let guessedCategory = Category.EXTRAS;
+      if (upperName.includes('CERVEJA') || upperName.includes('REFRIGERANTE') || upperName.includes('AGUA') || upperName.includes('SUCO') || upperName.includes('VODKA') || upperName.includes('WHISKY') || upperName.includes('BEBIDA')) {
+        guessedCategory = Category.BEBIDAS;
+      } else if (upperName.includes('CARNE') || upperName.includes('LINGUICA') || upperName.includes('FRANGO') || upperName.includes('PICANHA') || upperName.includes('MAMINHA') || upperName.includes('ESPETO')) {
+        guessedCategory = Category.CARNES;
+      }
+
+      const newProduct: Product = {
+        id: newProdId,
+        name: item.name,
+        category: guessedCategory,
+        price: (item.unitCost || 0) * 2, // Margem padrão
+        cost: item.unitCost,
+        barcode: item.barcode,
+        type: ProductType.INDIVIDUAL,
+        recipe: [{ inventoryItemId: invId, quantity: 1 }],
+        active: true
+      };
+      
+      await db.products.add(newProduct);
+      product = newProduct;
+    }
+
+    // 2. Atualizar Estoque
+    const invItem = await db.inventory.get(invId);
+    if (invItem) {
+      const newQty = invItem.quantity + item.quantity;
+      await db.inventory.update(invId, { quantity: newQty });
+      
+      // 3. Registrar Movimentação
+      await addStockMovement(user, {
+        itemId: invId,
+        itemName: invItem.name,
+        type,
+        quantity: item.quantity,
+        unitCost: item.unitCost,
+        originId
+      });
+    }
+  }
+
+  await addAuditLog(user, user, {
+    action: 'ENTRADA_ESTOQUE',
+    details: `Entrada de estoque processada (${items.length} itens) via ${type}`
+  });
+};
+
+export const saveNFe = async (user: User, nfe: Omit<NFe, 'timestamp'>): Promise<void> => {
+  const newNfe = { ...nfe, timestamp: Date.now() };
+  await db.nfes.add(newNfe);
+  await addAuditLog(user, user, {
+    action: 'IMPORTACAO_NFE',
+    details: `NFe importada: R$ ${nfe.totalValue.toFixed(2)}`
+  });
+};
+
